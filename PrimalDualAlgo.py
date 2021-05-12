@@ -7,7 +7,7 @@ def print_result_sets(N_b, N_f, G_b, G_f, Z_n, Z_zero, p, r, obj, rpt=False):
     print("\n - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
     if not rpt: print("Step 1: Find a feasible dual solution y")
     else: print("Redo: Find a feasible dual solution y")
-    print("Dual variable p_j's: ",p)
+    print("Dual variable p_i's: ",p)
     print("Dual variable r_j's: ",r)
     print("Objective: ", obj)
     print("\n**Set Results:**")
