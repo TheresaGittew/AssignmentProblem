@@ -1,0 +1,3 @@
+- "PrimalDualAlgo" :    Main file, including one small sample data set with 4 bidders and 6 goods. Run this program to execute the pd algorithm
+- "UnrestrPrimalDual" : Contains the "normal" primal and its dual and a function to compute a feasible dual
+- "RestrictedProblems" : Restricted Primal + Dual, implemented with gurobi
