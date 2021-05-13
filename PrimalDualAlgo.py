@@ -43,6 +43,7 @@ def print_results_rdp(objVal, phi_results, rho_results):
     print("Q results:", phi_results)
     print("S results", rho_results)
 
+#test
 
 def pd_assign_algo(N, G, values, supply, r_start, print_out=True):
     # Step 1 - create feasible dual solution
