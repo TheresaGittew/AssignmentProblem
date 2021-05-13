@@ -1,6 +1,19 @@
 import UnrestrPrimalDual as ap
 import RestrictedProblems as rps
 import gurobipy as gp
+import NEW_UnrestrDual as nfd
+import NEW_RestrictedProblems as nr
+
+def print_results_sets_NEW (p, r, D, obj, rpt=False):
+    print("\n - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+    if not rpt: print("Step 1: Find a feasible dual solution y")
+    else:
+        print("Step 1 (Repeat): Find a feasible dual solution y")
+    print("Dual variable p_j's: ", p)
+    print("Dual variable r_j's: ", r)
+    print("Objective: ", obj)
+    print("Set D: " , D)
+
 
 
 def print_result_sets(N_b, N_f, G_b, G_f, Z_n, Z_zero, p, r, obj, rpt=False):
@@ -62,6 +75,53 @@ def pd_assign_algo(N, G, values, supply, r_start, print_out=True):
 
 
 
+def pd_assign_algo_new(N, G, values, supply, r_start, print_out=True):
+
+    # Step 1 - create feasible dual solution
+    p, r_j, obj, D_r = nfd.generate_feasible_dual(N, G, values, supply, r_start)
+    if print_out: print_results_sets_NEW(p=p, r=r_j, D=D_r, obj=obj)
+
+    # Step 2 - use restricted primal
+    gm_1 = gp.Model()
+    objVal_rp, vars = nr.restr_primal(gm_1, N, G, D_r, supply)
+    if print_out: print_results_rp(objVal_rp, vars)
+
+    # Step 3 - compute z* vector with restricted dual
+    while (objVal_rp != 0):
+        print("\n- - - - * * * * Start new Iteration * * * * - - - - - - - -\n")
+
+        gm_2 = gp.Model ()
+        objVal_rd, q_results, s_results = nr.restr_dual(gm=gm_2, N=N, G=G, D_r=D_r, supply=supply)
+        if print_out: print_results_rdp(objVal_rd, q_results, s_results)
+        p_i_new = [a - b for a, b in zip(p, q_results.values())]
+        r_j_new = [a - b for (a, b) in zip(r_j, s_results.values())]
+
+        # Back to Step 1: Find sets with the dual
+        p, r_j, obj, D_r = nfd.generate_feasible_dual(N, G, values, supply, r_j_new, p_i_new)
+        if print_out: print_results_sets_NEW(p, r_j, D_r, obj, True)
+
+        # Back to Step 2: use restricted Primal to evaluate solution
+        gm_3 = gp.Model ()
+        objVal_rp, vars = nr.restr_primal(gm_3, N, G, D_r, supply)
+        if print_out: print_results_rp(objVal_rp, vars)
+
+
+
+
+
+
+v = [[1, 1, 4, 7, 6], [2, 2, 3, 9, 5], [3, 0, 4, 8, 2]]
+s = [1, 3, 5, 2, 1]
+
+v2 = [[1, 1, 4, 7, 6, 10], [2, 2, 3, 9, 5, 11], [3, 0, 4, 8, 2, 13], [3, 5, 4, 3, 2, 11]]
+s2 = [1, 3, 5, 2, 1, 1]
+
+#pd_assign_algo(N=[0,1,2,3],G=[0,1,2,3,4,5],values=v2, supply=s2, r_start=[0, 0, 0, 0, 0, 0])
+#
+gm_3 = gp.Model()
+ap.primal(gm_3, [0,1,2,3], [0,1,2,3,4,5], v2, s2)
+
+pd_assign_algo_new(N=[0,1,2,3],G=[0,1,2,3,4,5],values=v2, supply=s2, r_start=[0, 0, 0, 0, 0, 0])
 
 v = [[1, 1, 4, 7, 6], [2, 2, 3, 9, 5], [3, 0, 4, 8, 2]]
 s = [1, 3, 5, 2, 1]
