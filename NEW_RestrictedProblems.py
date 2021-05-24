@@ -51,7 +51,7 @@ def restr_dual(gm, N, G, D_r, supply):
             gm.addConstr(q[i] + s[j] <= 0)
 
     gm.setObjective(sum(q[i] for i in N) + sum(supply[j] * s[j] for j in G), GRB.MAXIMIZE)
-    gm.setParam('Method', 0)
+    gm.setParam('Method', -1)
     gm.setParam('OutputFlag', False)
     gm.optimize()
 
