@@ -1,10 +1,13 @@
-import UnrestrPrimalDual as ap
-import RestrictedProblems as rps
+import Z_Depr_UnrestrPrimalDual as ap
+import Z_Depr_RestrictedProblems as rps
 import gurobipy as gp
 import NEW_UnrestrDual as nfd
 import NEW_RestrictedProblems as nr
-import WithoutGRB as wgrb
+import Z_Depr_WithoutGRB as wgrb
+import Without_GRB_new as wgrbn
 import numpy as np
+import time
+
 
 def print_results_sets_NEW (p, r, D, obj, rpt=False):
     print("\n - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
@@ -44,38 +47,6 @@ def print_results_rdp(objVal, phi_results, rho_results):
     print("Objective: ", objVal)
     print("Q results:", phi_results) # phi = profit improvement
     print("S results", rho_results) # rho = price improvement
-
-#test
-
-def pd_assign_algo(N, G, values, supply, r_start, print_out=True):
-    # Step 1 - create feasible dual solution
-    p_i, r_j, obj, ([N_b, N_f, G_b, G_f, Z_zero, Z_n])  = ap.generate_feasible_dual(N,G,values, supply, r_start)
-    if print_out: print_result_sets(N_b, N_f, G_b, G_f, Z_n, Z_zero, p_i, r_j, obj)
-
-    # Step 2 - use restricted primal
-    gm_1 = gp.Model()
-    objVal_rp, vars = rps.restr_primal(gm_1, N_b, N_f, G_b, G_f, N, G, Z_zero, Z_n, values, supply)
-    if print_out: print_results_rp(objVal_rp, vars)
-
-    # Step 3 - compute z* vector with restricted dual
-    while (objVal_rp != 0):
-        print ("\n- - - - * * * * Start new Iteration * * * * - - - - - - - -\n")
-
-        gm_2 = gp.Model()
-        objVal_rd, phis_z, rhos_z = rps.restr_dual(gm_2, N_b, N_f, G_b, G_f, N, G, Z_zero, Z_n, values, supply)
-        if print_out: print_results_rdp(objVal_rd, phis_z, rhos_z)
-        p_i_new = [a + b for a, b in zip(p_i, phis_z.values())]
-        r_j_new =[a + b for (a,b) in zip(r_j, rhos_z.values())]
-
-        # Back to Step 2: Find sets with dual
-        p_i, r_j, obj, ([N_b, N_f, G_b, G_f, Z_zero, Z_n]) = ap.generate_feasible_dual(N,G,values, supply, r_j_new, p_i_new)
-        if print_out: print_result_sets(N_b, N_f, G_b, G_f, Z_n, Z_zero, p_i, r_j, obj, True)
-
-        # Use restricted primal to evaluate new solution
-        gm_1 = gp.Model()
-        objVal_rp, vars = rps.restr_primal(gm_1, N_b, N_f, G_b, G_f, N, G, Z_zero, Z_n, values, supply)
-        if print_out: print_results_rp(objVal_rp, vars )
-
 
 
 def pd_assign_algo_new(N, G, values, supply, r_start, print_out=False):
@@ -133,11 +104,11 @@ def pd_algo_without_gurobi(N, G, values, supply, r_start, print_out=False):   # 
         profits, prices, obj, D_r = nfd.generate_feasible_dual(N, G, values, supply, prices.tolist(), profits.tolist())
         if print_out : print_results_sets_NEW(p=profits, r=prices, D=D_r, obj=obj)
 
-        res = wgrb.find_smallest_overdem_set(supply, D_r)
+        res = wgrbn.find_smallest_overdem_set(supply, D_r)
 
-    print("Final result: Profits ", profits, " Prices: ", prices)
+    if print_out: print("Final result: Profits ", profits, " Prices: ", prices)
     obj_sol = (sum(profits[i] for i in N) + sum(supply[j] * prices[j] for j in G))
-    print("Obj val: ", obj_sol)
+    if print_out: print("Obj val: ", obj_sol)
     return profits, prices, obj_sol
 
 
@@ -170,14 +141,22 @@ G=[0, 1, 2, 3, 4, 5, 6, 7, 8]
 v5=[[17, 21, 14, 12, 15, 4, 14, 0, 18], [9, 23, 24, 17, 24, 1, 10, 1, 0], [4, 27, 14, 26, 1, 9, 23, 11, 20], [2, 1, 26, 21, 6, 23, 18, 4, 27], [8, 20, 2, 12, 17, 7, 22, 10, 27], [27, 11, 7, 3, 19, 16, 7, 21, 3], [24, 9, 9, 26, 23, 12, 2, 15, 13], [23, 4, 19, 15, 11, 21, 9, 6, 22]]
 s5=[1, 1, 1, 1, 1, 6.0, 4.0, 1, 1]
 
-pd_algo_without_gurobi(N=N, G=G, values=v5, supply=s5, r_start=[0, 0, 0, 0, 0, 0, 0, 0, 0 ], print_out=True)
 
 
-#
+N = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+G = [0, 1, 2, 3, 4, 5, 6]
+v6 = [[22, 4, 24, 1, 10, 28, 9], [8, 0, 27, 11, 12, 23, 28], [0, 27, 22, 0, 12, 16, 0], [26, 14, 22, 0, 2, 15, 20], [7, 2, 27, 7, 29, 1, 16], [6, 27, 4, 16, 10, 0, 6], [9, 1, 29, 15, 7, 2, 29], [4, 9, 14, 19, 21, 3, 25], [4, 4, 27, 8, 21, 9, 28]]
+s6 = [1.0, 4.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+
+pd_algo_without_gurobi(N=N, G=G, values=v6, supply=s6, r_start=[0, 0, 0, 0, 0, 0, 0], print_out=True)
+
+
+
+
 # gm_3 = gp.Model()
 # ap.primal(gm_3, [0,1,2,3], [0,1,2,3,4,5], v2, s2)
 #
-#profits, prices, result = pd_assign_algo_new(N=N,G=G,values=v5, supply=s5, r_start=[0, 0, 0, 0, 0, 0, 0, 0, 0], print_out=True)
+#profits, prices, result = pd_assign_algo_new(N=N,G=G,values=v6, supply=s6, r_start=[0, 0, 0, 0, 0, 0, 0], print_out=True)
 #print("profits : ", profits, " | prices : " , prices , " | result : " , result)
 #
 # v = [[1, 1, 4, 7, 6], [2, 2, 3, 9, 5], [3, 0, 4, 8, 2]]
