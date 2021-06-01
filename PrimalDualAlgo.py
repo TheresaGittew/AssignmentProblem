@@ -4,7 +4,7 @@ import gurobipy as gp
 import NEW_UnrestrDual as nfd
 import NEW_RestrictedProblems as nr
 import Z_Depr_WithoutGRB as wgrb
-import Without_GRB_new as wgrbn
+import New_Algo_Without_Gurobi as wgrbn
 import numpy as np
 import time
 
